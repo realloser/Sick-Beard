@@ -1,3 +1,6 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
 # Author: Nic Wolfe <nic@wolfeden.ca>
 # URL: http://code.google.com/p/sickbeard/
 #
@@ -21,7 +24,10 @@ import time
 import urllib
 import datetime
 
-from xml.dom.minidom import parseString
+try:
+    import xml.etree.cElementTree as etree
+except ImportError:
+    import elementtree.ElementTree as etree
 
 import sickbeard
 import generic
@@ -104,8 +110,8 @@ class NZBIndexProvider(generic.NZBProvider):
             return []
 
         try:
-            parsedXML = parseString(searchResult)
-            items = parsedXML.getElementsByTagName('item')
+            parsedXML = etree.fromstring(searchResult)
+            items = parsedXML.iter('item')
         except Exception, e:
             logger.log(u"Error trying to load NZBIndex RSS feed: "+ex(e), logger.ERROR)
             return []
@@ -132,7 +138,7 @@ class NZBIndexProvider(generic.NZBProvider):
 
             (title, url) = self._get_title_and_url(curResult)
 
-            pubDate_node = curResult.getElementsByTagName('pubDate')[0]
+            pubDate_node = curResult.find('pubDate')
             pubDate = helpers.get_xml_text(pubDate_node)
             dateStr = re.search('(\w{3}, \d{1,2} \w{3} \d{4} \d\d:\d\d:\d\d) [\+\-]\d{4}', pubDate)
             if not dateStr:
