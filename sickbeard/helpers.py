@@ -150,6 +150,8 @@ def getURL(url, headers=[]):
         opener.addheaders.append(cur_header)
 
     try:
+        if " " in url:
+            url = url.replace(" ", "%20")
         usock = opener.open(url)
         url = usock.geturl()
         encoding = usock.info().get("Content-Encoding")
@@ -157,7 +159,10 @@ def getURL(url, headers=[]):
         if encoding in ('gzip', 'x-gzip', 'deflate'):
             content = usock.read()
             if encoding == 'deflate':
-                data = StringIO.StringIO(zlib.decompress(content))
+                try:
+                    data = StringIO.StringIO(zlib.decompress(content))
+                except zlib.error:
+                    data = StringIO.StringIO(zlib.decompress(content, -zlib.MAX_WBITS))
             else:
                 data = gzip.GzipFile('', 'rb', 9, StringIO.StringIO(content))
             result = data.read()
