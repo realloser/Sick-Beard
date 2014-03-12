@@ -52,6 +52,7 @@ def filterBadReleases(name, show):
 
     Returns: True if the release name is OK, False if it's bad.
     """
+    mandatory = []
 
     try:
         fp = NameParser()
@@ -61,13 +62,13 @@ def filterBadReleases(name, show):
         return False
 
     #if language not english, search for mandatory
-    if show.lang != "en":
+    if show and show.lang != "en":
         mandatory = langCodes[show.lang].split(" OR ")
         if langCodes[show.lang] in resultFilters:
             resultFilters.remove(langCodes[show.lang])
         logger.log(u"Language for \""+show.name+"\" is "+show.lang+" so im looking for \""+langCodes[show.lang]+"\" in release names", logger.DEBUG)
     #if show is in english append all languages to the ignore list
-    elif show.lang == "en":
+    elif show and show.lang == "en":
         for language in langCodes.values():
             if not language in resultFilters:
                 resultFilters.append(language)
@@ -93,8 +94,8 @@ def filterBadReleases(name, show):
 
     # if any of the bad strings are in the name then say no
     for x in resultFilters + sickbeard.IGNORE_WORDS.split(','):
-        if re.search('(^|[\W_])'+x+'($|[\W_])', check_string, re.I):
-            logger.log(u"Invalid scene release: "+name+" contains "+x+", ignoring it", logger.DEBUG)
+        if re.search('(^|[\W_])' + x.strip() + '($|[\W_])', check_string, re.I):
+            logger.log(u"Invalid scene release: " + name + " contains " + x + ", ignoring it", logger.DEBUG)
             return False
     # if every of the mandatory words are in there, say yes
     if mandatory:
@@ -166,14 +167,10 @@ def makeSceneSeasonSearchString (show, segment, extraSearchType=None):
         numseasons = int(numseasonsSQlResult[0][0])
 
         seasonStrings = ["S%02d" % segment]
-        # since nzbmatrix allows more than one search per request we search SxEE results too
-        if extraSearchType == "nzbmatrix":
-            seasonStrings.append("%ix" % segment)
 
     showNames = set(makeSceneShowSearchStrings(show))
 
     toReturn = []
-    term_list = []
 
     # search each show name
     for curShow in showNames:
@@ -193,23 +190,6 @@ def makeSceneSeasonSearchString (show, segment, extraSearchType=None):
                             toReturn.append(curShow + "." + cur_season + " " + x)
                     # toReturn.append(curShow + "." + cur_season)
 
-        # nzbmatrix is special, we build a search string just for them
-        elif extraSearchType == "nzbmatrix":
-            if numseasons == 1:
-                toReturn.append('"'+curShow+'"')
-            elif numseasons == 0:
-                toReturn.append('"'+curShow+' '+str(segment).replace('-',' ')+'"')
-            else:
-                term_list = [x+'*' for x in seasonStrings]
-                if show.air_by_date:
-                    term_list = ['"'+x+'"' for x in term_list]
-
-                toReturn.append('"'+curShow+'"')
-
-    if extraSearchType == "nzbmatrix":
-        toReturn = ['+('+','.join(toReturn)+')']
-        if term_list:
-            toReturn.append('+('+','.join(term_list)+')')
     return toReturn
 
 

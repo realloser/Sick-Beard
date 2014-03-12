@@ -117,13 +117,13 @@ class FailedProcessor(object):
             if len(results) == 1:
                 found_file = ek.ek(os.path.basename, results[0])
                 found_file = re.sub(r'\.nzb$', '', found_file, flags=re.IGNORECASE)
-                if show_name_helpers.filterBadReleases(found_file):
+                if show_name_helpers.filterBadReleases(found_file, None):
                     self._log(u"Release name (" + found_file + ") found from file (" + results[0] + ")")
                     return found_file
 
         # If that fails, we try the folder
         folder = ek.ek(os.path.basename, self.dir_name)
-        if show_name_helpers.filterBadReleases(folder):
+        if show_name_helpers.filterBadReleases(folder, None):
             # NOTE: Multiple failed downloads will change the folder name.
             # (e.g., appending #s)
             # Should we handle that?

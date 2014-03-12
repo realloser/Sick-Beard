@@ -72,11 +72,12 @@ def _downloadResult(result):
 
         # save the data to disk
         try:
-            fileOut = open(fileName, "w")
-            fileOut.write(result.extraInfo[0])
-            fileOut.close()
+            with ek.ek(open, fileName, 'w') as fileOut:
+                fileOut.write(result.extraInfo[0])
+
             helpers.chmodAsParent(fileName)
-        except IOError, e:
+
+        except EnvironmentError, e:
             logger.log(u"Error trying to save NZB to black hole: " + ex(e), logger.ERROR)
             newResult = False
 
@@ -86,9 +87,6 @@ def _downloadResult(result):
     else:
         logger.log(u"Invalid provider type - this is a coding error, report it please", logger.ERROR)
         return False
-
-    if newResult:
-        ui.notifications.message('Episode snatched', '<b>%s</b> snatched from <b>%s</b>' % (result.name, resProvider.name))
 
     return newResult
 
@@ -125,6 +123,8 @@ def snatchEpisode(result, endStatus=SNATCHED):
 
     if dlResult is False:
         return False
+
+    ui.notifications.message('Episode snatched', result.name)
 
     history.logSnatch(result)
 
@@ -185,7 +185,7 @@ def searchForNeededEpisodes():
 
             # if all results were rejected move on to the next episode
             if not bestResult:
-                logger.log(u"All found results for "+curEp.prettyName()+" were rejected.", logger.DEBUG)
+                logger.log(u"All found results for " + curEp.prettyName() + " were rejected.", logger.DEBUG)
                 continue
 
             # if it's already in the list (from another provider) and the newly found quality is no better then skip it
@@ -207,7 +207,7 @@ def pickBestResult(results, quality_list=None):
     # find the best result for the current episode
     bestResult = None
     for cur_result in results:
-        logger.log("Quality of " + cur_result.name + " is " + Quality.qualityStrings[cur_result.quality])
+        logger.log(u"Quality of " + cur_result.name + " is " + Quality.qualityStrings[cur_result.quality])
 
         if quality_list and cur_result.quality not in quality_list:
             logger.log(cur_result.name + " is a quality we know we don't want, rejecting it", logger.DEBUG)

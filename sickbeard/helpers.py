@@ -16,6 +16,8 @@
 # You should have received a copy of the GNU General Public License
 # along with Sick Beard.  If not, see <http://www.gnu.org/licenses/>.
 
+from __future__ import with_statement
+
 import gzip
 import os
 import re
@@ -23,7 +25,6 @@ import shutil
 import socket
 import stat
 import StringIO
-import sys
 import time
 import traceback
 import urllib
@@ -139,7 +140,7 @@ def sanitizeFileName(name):
     return name
 
 
-def getURL(url, headers=[]):
+def getURL(url, post_data=None, headers=[]):
     """
     Returns a byte-string retrieved from the url provider.
     """
@@ -150,7 +151,7 @@ def getURL(url, headers=[]):
         opener.addheaders.append(cur_header)
 
     try:
-        usock = opener.open(url)
+        usock = opener.open(url, post_data)
         url = usock.geturl()
         encoding = usock.info().get("Content-Encoding")
 
@@ -194,6 +195,19 @@ def getURL(url, headers=[]):
     return result
 
 
+def is_hidden_folder(folder):
+    """
+    Returns True if folder is hidden.
+    On Linux based systems hidden folders start with . (dot)
+    folder: Full path of folder to check
+    """
+    if ek.ek(os.path.isdir, folder):
+        if ek.ek(os.path.basename, folder).startswith('.'):
+            return True
+
+    return False
+
+
 def findCertainShow(showList, tvdbid):
     results = filter(lambda x: x.tvdbid == tvdbid, showList)
     if len(results) == 0:
@@ -228,146 +242,6 @@ def makeDir(path):
         except OSError:
             return False
     return True
-
-
-def makeShowNFO(showID, showDir):
-
-    logger.log(u"Making NFO for show " + str(showID) + " in dir " + showDir, logger.DEBUG)
-
-    if not makeDir(showDir):
-        logger.log(u"Unable to create show dir, can't make NFO", logger.ERROR)
-        return False
-
-    showObj = findCertainShow(sickbeard.showList, showID)
-    if not showObj:
-        logger.log(u"This should never have happened, post a bug about this!", logger.ERROR)
-        raise Exception("BAD STUFF HAPPENED")
-
-    tvdb_lang = showObj.lang
-    # There's gotta be a better way of doing this but we don't wanna
-    # change the language value elsewhere
-    ltvdb_api_parms = sickbeard.TVDB_API_PARMS.copy()
-
-    if tvdb_lang and not tvdb_lang == 'en':
-        ltvdb_api_parms['language'] = tvdb_lang
-
-    t = tvdb_api.Tvdb(actors=True, **ltvdb_api_parms)
-
-    try:
-        myShow = t[int(showID)]
-    except tvdb_exceptions.tvdb_shownotfound:
-        logger.log(u"Unable to find show with id " + str(showID) + " on tvdb, skipping it", logger.ERROR)
-        raise
-
-    except tvdb_exceptions.tvdb_error:
-        logger.log(u"TVDB is down, can't use its data to add this show", logger.ERROR)
-        raise
-
-    # check for title and id
-    try:
-        if myShow["seriesname"] == None or myShow["seriesname"] == "" or myShow["id"] == None or myShow["id"] == "":
-            logger.log(u"Incomplete info for show with id " + str(showID) + " on tvdb, skipping it", logger.ERROR)
-
-            return False
-    except tvdb_exceptions.tvdb_attributenotfound:
-        logger.log(u"Incomplete info for show with id " + str(showID) + " on tvdb, skipping it", logger.ERROR)
-
-        return False
-
-    tvNode = buildNFOXML(myShow)
-    # Make it purdy
-    indentXML(tvNode)
-    nfo = etree.ElementTree(tvNode)
-
-    logger.log(u"Writing NFO to " + os.path.join(showDir, "tvshow.nfo"), logger.DEBUG)
-    nfo_filename = os.path.join(showDir, "tvshow.nfo").encode('utf-8')
-    nfo_fh = open(nfo_filename, 'w')
-    nfo.write(nfo_fh, encoding="utf-8")
-
-    return True
-
-
-def buildNFOXML(myShow):
-    '''
-    Build an etree.Element of the root node of an NFO file with the
-    data from `myShow`, a TVDB show object.
-
-    >>> from collections import defaultdict
-    >>> from xml.etree.cElementTree import tostring
-    >>> show = defaultdict(lambda: None, _actors=[])
-    >>> tostring(buildNFOXML(show))
-    '<tvshow xsd="http://www.w3.org/2001/XMLSchema" xsi="http://www.w3.org/2001/XMLSchema-instance"><title /><rating /><plot /><episodeguide><url /></episodeguide><mpaa /><id /><genre /><premiered /><studio /></tvshow>'
-    >>> show['seriesname'] = 'Peaches'
-    >>> tostring(buildNFOXML(show))
-    '<tvshow xsd="http://www.w3.org/2001/XMLSchema" xsi="http://www.w3.org/2001/XMLSchema-instance"><title>Peaches</title><rating /><plot /><episodeguide><url /></episodeguide><mpaa /><id /><genre /><premiered /><studio /></tvshow>'
-    >>> show['contentrating'] = 'PG'
-    >>> tostring(buildNFOXML(show))
-    '<tvshow xsd="http://www.w3.org/2001/XMLSchema" xsi="http://www.w3.org/2001/XMLSchema-instance"><title>Peaches</title><rating /><plot /><episodeguide><url /></episodeguide><mpaa>PG</mpaa><id /><genre /><premiered /><studio /></tvshow>'
-    >>> show['genre'] = 'Fruit|Edibles'
-    >>> tostring(buildNFOXML(show))
-    '<tvshow xsd="http://www.w3.org/2001/XMLSchema" xsi="http://www.w3.org/2001/XMLSchema-instance"><title>Peaches</title><rating /><plot /><episodeguide><url /></episodeguide><mpaa>PG</mpaa><id /><genre>Fruit / Edibles</genre><premiered /><studio /></tvshow>'
-    '''
-    tvNode = etree.Element("tvshow")
-    for ns in XML_NSMAP.keys():
-        tvNode.set(ns, XML_NSMAP[ns])
-
-    title = etree.SubElement(tvNode, "title")
-    if myShow["seriesname"] != None:
-        title.text = myShow["seriesname"]
-
-    rating = etree.SubElement(tvNode, "rating")
-    if myShow["rating"] != None:
-        rating.text = myShow["rating"]
-
-    plot = etree.SubElement(tvNode, "plot")
-    if myShow["overview"] != None:
-        plot.text = myShow["overview"]
-
-    episodeguide = etree.SubElement(tvNode, "episodeguide")
-    episodeguideurl = etree.SubElement(episodeguide, "url")
-    if myShow["id"] != None:
-        showurl = sickbeard.TVDB_BASE_URL + '/series/' + myShow["id"] + '/all/en.zip'
-        episodeguideurl.text = showurl
-
-    mpaa = etree.SubElement(tvNode, "mpaa")
-    if myShow["contentrating"] != None:
-        mpaa.text = myShow["contentrating"]
-
-    tvdbid = etree.SubElement(tvNode, "id")
-    if myShow["id"] != None:
-        tvdbid.text = myShow["id"]
-
-    genre = etree.SubElement(tvNode, "genre")
-    if myShow["genre"] != None:
-        genre.text = " / ".join([x for x in myShow["genre"].split('|') if x != ''])
-
-    premiered = etree.SubElement(tvNode, "premiered")
-    if myShow["firstaired"] != None:
-        premiered.text = myShow["firstaired"]
-
-    studio = etree.SubElement(tvNode, "studio")
-    if myShow["network"] != None:
-        studio.text = myShow["network"]
-
-    for actor in myShow['_actors']:
-
-        cur_actor = etree.SubElement(tvNode, "actor")
-
-        cur_actor_name = etree.SubElement(cur_actor, "name")
-        cur_actor_name.text = actor['name']
-        cur_actor_role = etree.SubElement(cur_actor, "role")
-        cur_actor_role_text = actor['role']
-
-        if cur_actor_role_text != None:
-            cur_actor_role.text = cur_actor_role_text
-
-        cur_actor_thumb = etree.SubElement(cur_actor, "thumb")
-        cur_actor_thumb_text = actor['image']
-
-        if cur_actor_thumb_text != None:
-            cur_actor_thumb.text = cur_actor_thumb_text
-
-    return tvNode
 
 
 def searchDBForShow(regShowName):
@@ -505,17 +379,23 @@ def make_dirs(path):
     return True
 
 
-def rename_ep_file(cur_path, new_path):
+def rename_ep_file(cur_path, new_path, old_path_length=0):
     """
     Creates all folders needed to move a file to its new location, renames it, then cleans up any folders
     left that are now empty.
 
     cur_path: The absolute path to the file you want to move/rename
     new_path: The absolute path to the destination for the file WITHOUT THE EXTENSION
+    old_path_length: The length of media file path (old name) WITHOUT THE EXTENSION
     """
 
-    new_dest_dir, new_dest_name = os.path.split(new_path)  #@UnusedVariable
-    cur_file_name, cur_file_ext = os.path.splitext(cur_path)  #@UnusedVariable
+    new_dest_dir, new_dest_name = os.path.split(new_path)  # @UnusedVariable
+    if old_path_length == 0 or old_path_length > len(cur_path):
+        # approach from the right
+        cur_file_name, cur_file_ext = os.path.splitext(cur_path)  # @UnusedVariable
+    else:
+        # approach from the left
+        cur_file_ext = cur_path[old_path_length:]
 
     # put the extension on the incoming file
     new_path += cur_file_ext
@@ -594,7 +474,7 @@ def chmodAsParent(childPath):
         return
 
     childPath_owner = childPathStat.st_uid
-    user_id = os.geteuid()  #only available on UNIX
+    user_id = os.geteuid()  # @UndefinedVariable - only available on UNIX
 
     if user_id != 0 and user_id != childPath_owner:
         logger.log(u"Not running as root or owner of " + childPath + ", not trying to set permissions", logger.DEBUG)
@@ -632,17 +512,24 @@ def fixSetGroupID(childPath):
             return
 
         childPath_owner = childStat.st_uid
-        user_id = os.geteuid()  #only available on UNIX
+        user_id = os.geteuid()  # @UndefinedVariable - only available on UNIX
 
         if user_id != 0 and user_id != childPath_owner:
             logger.log(u"Not running as root or owner of " + childPath + ", not trying to set the set-group-ID", logger.DEBUG)
             return
 
         try:
-            ek.ek(os.chown, childPath, -1, parentGID)  #@UndefinedVariable - only available on UNIX
+            ek.ek(os.chown, childPath, -1, parentGID)  # @UndefinedVariable - only available on UNIX
             logger.log(u"Respecting the set-group-ID bit on the parent directory for %s" % (childPath), logger.DEBUG)
         except OSError:
             logger.log(u"Failed to respect the set-group-ID bit on the parent directory for %s (setting group ID %i)" % (childPath, parentGID), logger.ERROR)
+
+
+def real_path(path):
+    """
+    Returns: the canonicalized absolute pathname. The resulting path will have no symbolic link, '/./' or '/../' components.
+    """
+    return ek.ek(os.path.normpath, ek.ek(os.path.normcase, ek.ek(os.path.realpath, path)))
 
 
 def sanitizeSceneName(name, ezrss=False):
@@ -679,8 +566,8 @@ def create_https_certificates(ssl_cert, ssl_key):
     Create self-signed HTTPS certificares and store in paths 'ssl_cert' and 'ssl_key'
     """
     try:
-        from OpenSSL import crypto  #@UnresolvedImport
-        from lib.certgen import createKeyPair, createCertRequest, createCertificate, TYPE_RSA, serial  #@UnresolvedImport
+        from OpenSSL import crypto  # @UnresolvedImport
+        from lib.certgen import createKeyPair, createCertRequest, createCertificate, TYPE_RSA, serial  # @UnresolvedImport
     except:
         logger.log(u"pyopenssl module missing, please install for https access", logger.WARNING)
         return False
@@ -721,8 +608,8 @@ def parse_json(data):
 
     try:
         parsedJSON = json.loads(data)
-    except ValueError:
-        logger.log(u"Error trying to decode json data:" + data, logger.ERROR)
+    except ValueError, e:
+        logger.log(u"Error trying to decode json data. Error: " + ex(e), logger.DEBUG)
         return None
 
     return parsedJSON
@@ -744,7 +631,7 @@ def parse_xml(data, del_xmlns=False):
     try:
         parsedXML = etree.fromstring(data)
     except Exception, e:
-        logger.log(u"Error trying to parse xml data: " + data + " to Elementtree, Error: " + ex(e), logger.DEBUG)
+        logger.log(u"Error trying to parse xml data. Error: " + ex(e), logger.DEBUG)
         parsedXML = None
 
     return parsedXML
@@ -776,26 +663,30 @@ def get_xml_text(element, mini_dom=False):
     return text.strip()
 
 
-def backupVersionedFile(oldFile, version):
+def backupVersionedFile(old_file, version):
+
     numTries = 0
 
-    newFile = oldFile + '.' + 'v' + str(version)
+    new_file = old_file + '.' + 'v' + str(version)
 
-    while not ek.ek(os.path.isfile, newFile):
-        if not ek.ek(os.path.isfile, oldFile):
+    while not ek.ek(os.path.isfile, new_file):
+        if not ek.ek(os.path.isfile, old_file):
+            logger.log(u"Not creating backup, " + old_file + " doesn't exist", logger.DEBUG)
             break
 
         try:
-            logger.log(u"Attempting to back up " + oldFile + " before migration...")
-            shutil.copy(oldFile, newFile)
-            logger.log(u"Done backup, proceeding with migration.")
+            logger.log(u"Trying to back up " + old_file + " to " + new_file, logger.DEBUG)
+            shutil.copy(old_file, new_file)
+            logger.log(u"Backup done", logger.DEBUG)
             break
         except Exception, e:
-            logger.log(u"Error while trying to back up " + oldFile + ": " + ex(e))
+            logger.log(u"Error while trying to back up " + old_file + " to " + new_file + " : " + ex(e), logger.WARNING)
             numTries += 1
             time.sleep(1)
-            logger.log(u"Trying again.")
+            logger.log(u"Trying again.", logger.DEBUG)
 
         if numTries >= 10:
-            logger.log(u"Unable to back up " + oldFile + ", please do it manually.")
-            sys.exit(1)
+            logger.log(u"Unable to back up " + old_file + " to " + new_file + " please do it manually.", logger.ERROR)
+            return False
+
+    return True

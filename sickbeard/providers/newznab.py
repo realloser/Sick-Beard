@@ -42,34 +42,34 @@ from sickbeard.exceptions import ex, AuthException
 
 class NewznabProvider(generic.NZBProvider):
 
-    def __init__(self, name, url, key=''):
+    def __init__(self, name, url, key='', catIDs='5030,5040'):
 
         generic.NZBProvider.__init__(self, name)
-
-
 
         self.cache = NewznabCache(self)
 
         self.url = url
-        self.key = key
-        self.catIDs = None
-        # if not catIDs:
-        #     self.catIDs = '5000'
-        #     logger.log(u"Using fallback catID: 5000, please select a cat id to search in for provider [" + name + "]", logger.ERROR)
-        # else:
-        #     self.catIDs = catIDs
 
-        # if a provider doesn't need an api key then this can be false
-        self.needs_auth = True
+        self.key = key
+
+        # a 0 in the key spot indicates that no key is needed
+        if self.key == '0':
+            self.needs_auth = False
+        else:
+            self.needs_auth = True
+
+        if catIDs:
+            self.catIDs = catIDs
+        else:
+            self.catIDs = '5030,5040'
 
         self.enabled = True
-
         self.supportsBacklog = True
 
         self.default = False
 
     def configStr(self):
-        return '{0}|{1}|{2}|{3}|{4}'.format(self.name, self.url, self.key, self.catIDs, int(self.enabled))#self.name + '|' + self.url + '|' + self.key + '|' + self.catIDs + '|' + str(int(self.enabled))
+        return self.name + '|' + self.url + '|' + self.key + '|' + self.catIDs + '|' + str(int(self.enabled))
 
     def imageName(self):
         if ek.ek(os.path.isfile, ek.ek(os.path.join, sickbeard.PROG_DIR, 'data', 'images', 'providers', self.getID() + '.png')):
@@ -198,29 +198,19 @@ class NewznabProvider(generic.NZBProvider):
                   "limit": 100,
                   "cat": self.catIDs}
 
-
-       # if max_age is set, use it, don't allow it to be missing
+        # if max_age is set, use it, don't allow it to be missing
         if max_age or not params['maxage']:
             params['maxage'] = max_age
-
-        # hack this in for now
-        if self.getID() == 'nzbs_org':
-            params['cat'] += ',5070,5090'
 
         if search_params:
             params.update(search_params)
 
-        if self.key:
+        if self.needs_auth and self.key:
             params['apikey'] = self.key
 
         search_url = self.url + 'api?' + urllib.urlencode(params)
 
-        logparams = params
-        logparams['apikey'] = "XXXXXXXXXXXXXX"
-        logURL = self.url + 'api?' + urllib.urlencode(logparams)
-
-        logger.log(u"Search url: " + logURL, logger.DEBUG)
-
+        logger.log(u"Search url: " + search_url, logger.DEBUG)
 
         data = self.getURL(search_url)
 
@@ -311,14 +301,9 @@ class NewznabCache(tvcache.TVCache):
     def _getRSSData(self):
 
         params = {"t": "tvsearch",
-                  "age": sickbeard.USENET_RETENTION,
                   "cat": self.provider.catIDs}
 
-        # hack this in for now
-        # if self.provider.getID() == 'nzbs_org':
-        #   params['cat'] += ',5070,5090'
-
-        if self.provider.key:
+        if self.provider.needs_auth and self.provider.key:
             params['apikey'] = self.provider.key
 
         rss_url = self.provider.url + 'api?' + urllib.urlencode(params)

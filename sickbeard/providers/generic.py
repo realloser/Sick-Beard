@@ -19,6 +19,7 @@
 # You should have received a copy of the GNU General Public License
 # along with Sick Beard.  If not, see <http://www.gnu.org/licenses/>.
 
+from __future__ import with_statement
 
 import datetime
 import os
@@ -59,7 +60,7 @@ class GenericProvider(object):
 
     @staticmethod
     def makeID(name):
-        return re.sub("[^\w\d_]", "_", name).lower()
+        return re.sub("[^\w\d_]", "_", name.strip().lower())
 
     def imageName(self):
         return self.getID() + '.png'
@@ -97,7 +98,7 @@ class GenericProvider(object):
 
         return result
 
-    def getURL(self, url, headers=None):
+    def getURL(self, url, post_data=None, headers=None):
         """
         By default this is just a simple urlopen call but this method should be overridden
         for providers with special URL requirements (like cookies)
@@ -106,7 +107,7 @@ class GenericProvider(object):
         if not headers:
             headers = []
 
-        data = helpers.getURL(url, headers)
+        data = helpers.getURL(url, post_data, headers)
 
         if not data:
             logger.log(u"Error loading " + self.name + " URL: " + url, logger.ERROR)
@@ -142,11 +143,10 @@ class GenericProvider(object):
         logger.log(u"Saving to " + file_name, logger.DEBUG)
 
         try:
-            fileOut = open(file_name, writeMode)
-            fileOut.write(data)
-            fileOut.close()
+            with open(file_name, writeMode) as fileOut:
+                fileOut.write(data)
             helpers.chmodAsParent(file_name)
-        except IOError, e:
+        except EnvironmentError, e:
             logger.log(u"Unable to save the file: " + ex(e), logger.ERROR)
             return False
 
