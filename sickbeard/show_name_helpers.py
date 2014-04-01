@@ -38,10 +38,10 @@ resultFilters = ["sub(pack|s|bed|\.|fix)?", "nlsub(bed|s)?", "swesub(bed)?",
 mandatory = []
 
 langCodes = {
-    'de': 'german OR Videomann',
+    'de': 'german|videomann|euhd',
     'fr': 'french',
     'da': 'danish',
-    'it': 'ita',
+    'it': 'ita|italian',
     'es': 'spanish'
 }
 
