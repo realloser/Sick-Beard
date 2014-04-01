@@ -40,6 +40,8 @@ mandatory = []
 langCodes = {
     'de': 'german OR Videomann',
     'fr': 'french',
+    'da': 'danish',
+    'it': 'ita',
     'es': 'spanish'
 }
 
