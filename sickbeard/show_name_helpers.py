@@ -38,7 +38,7 @@ resultFilters = ["sub(pack|s|bed|\.|fix)?", "nlsub(bed|s)?", "swesub(bed)?",
 mandatory = []
 
 langCodes = {
-    'de': 'german OR Videomann',
+    'de': 'german',
     'fr': 'french',
     'es': 'spanish'
 }
@@ -236,7 +236,7 @@ def trimRelease(name):
     releasetrim = ['^sof-', '^euhd-', '^amb-', '^itg-', '^idtv-', '^zzgtv-', '^itn-', '^tcpa-', '^tvp-',
                       '^<?.* \d{9,} ?-? ', '^\.?zZz\.? ("|\')?', '^(.*) >', '^\[\d{5,}.*\[ ', '^\.: ', '^\s?-?\s?\[.+ presents\s?',
                       '^\s+?\[\d{2}\/\d{2}]\s?-?\s?("|\')?', '^>.*<<\s', '^\[.*\[\d{2}/\d{2}\]\s?-\s?("|\')','^<?.+?\[.*\d{2}] - ("|\')','\[.?TOWN.*\] ?- ?(\[.TV.\].")?',
-                      '\[\d{2}\/\d{2}\]\s?-\s?"', '\/.*presents\.', '^(-\.")', '\.-\.TV\.-\.\d*\.-\.'  ]
+                      '\[\d{2}\/\d{2}\]\s?-\s?"', '\/.*presents\.', '^(-\.")', '\.-\.TV\.-\.\d*\.-\.', '.*\[\.partner\.of\.www\.ssl-news\.info\.\]\."'  ]
     realname = name
     for regex in releasetrim:
         name = re.sub(regex, "", name)
