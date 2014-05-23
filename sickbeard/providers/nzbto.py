@@ -96,6 +96,11 @@ class NZBto(generic.NZBProvider):
         self.session.post("http://nzb.to/login.php", data={"action": "login", "username": sickbeard.NZBTO_USER, "password": sickbeard.NZBTO_PASS, "bind_ip": "on", "Submit": ".%3AEinloggen%3A.", "ret_url": ""})
         logger.log( 'sending login to nzb.to returned Cookie: {0}'.format(self.session.cookies.get_dict()), logger.DEBUG)
 
+		#search fix
+        deleteString = '|videomann|euhd'
+        if deleteString in curString:
+            curString = curString.replace(deleteString,'')
+		
         term =  re.sub('[\.\-\:]', ' ', curString).encode('utf-8')
         self.searchString = term
         if quotes:
