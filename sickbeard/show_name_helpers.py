@@ -64,7 +64,7 @@ def filterBadReleases(name, show):
 
     #if language not english, search for mandatory
     if show.lang != "en":
-        #mandatory = langCodes[show.lang].split(" OR ")
+        mandatory = langCodes[show.lang].split("|")
         if langCodes[show.lang] in resultFilters:
             resultFilters.remove(langCodes[show.lang])
         logger.log(u"Language for \""+show.name+"\" is "+show.lang+" so im looking for \""+langCodes[show.lang]+"\" in release names", logger.DEBUG)
