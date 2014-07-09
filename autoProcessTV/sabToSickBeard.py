@@ -21,6 +21,7 @@
 
 import sys
 import autoProcessTV
+import linux_2rename
 
 if len(sys.argv) < 7:
     print "Not enough arguments received from SABnzbd. Please update it."
@@ -30,6 +31,8 @@ else:
         print "seems like the release was downloaded from nzbindex useing nzbname/foldername for this one..."
         autoProcessTV.processEpisode(sys.argv[1], sys.argv[3], sys.argv[7])
     else:
+    	#try first to execute the linux2rename file if exists
+    	linux_2rename.executeRename(sys.argv[1])
         autoProcessTV.processEpisode(sys.argv[1], sys.argv[2], sys.argv[7])
 
 # SABnzbd argv:
