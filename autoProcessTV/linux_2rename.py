@@ -3,7 +3,7 @@ import os, stat
 import os.path
 import subprocess
 
-def executeLinux_2rename(dirName):
+def executeRename(dirName):
 	
 	# check whether the file exists in the folder
 	linux2rename = os.path.join(os.path.dirname(dirName), "linux_2rename.sh")
@@ -17,4 +17,4 @@ def executeLinux_2rename(dirName):
 		print "File", linux2rename, "not found"
 
 # print sys.argv[1]
-# executeLinux_2rename(sys.argv[1])
+# executeRename(sys.argv[1])
