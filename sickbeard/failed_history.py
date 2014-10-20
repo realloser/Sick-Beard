@@ -29,6 +29,7 @@ def prepareFailedName(release):
     if(fixed.endswith(".nzb")):
         fixed = fixed.rpartition(".")[0]
 
+    fixed = re.sub("([^{}]*){{[^\s]*}}", r"\1", fixed)
     fixed = re.sub("[\.\-\+\ ]", "_", fixed)
     return fixed
 
