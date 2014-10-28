@@ -49,7 +49,6 @@ class NZBto(generic.NZBProvider):
         self.searchString = ''
 
         self.session = requests.Session()
-        self.session.get("http://nzb.to")
         self.session.headers["Referer"] = "http://nzb.to/login"
         self.session.headers["User-Agent"] = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.7; rv:20.0) Gecko/20100101 Firefox/20.0"
 
