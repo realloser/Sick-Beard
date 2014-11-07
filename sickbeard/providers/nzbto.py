@@ -77,7 +77,10 @@ class NZBto(generic.NZBProvider):
         tmp_url = "http://nzb.to/inc/ajax/popupdetails.php?n=" + cur_el["href"].split("nid=")[1]
         x = self.session.get(tmp_url)
         tro = BeautifulSoup(x.text)
-        pw = tro.find('span', attrs={"style": "color:#ff0000"}).strong.next.next
+        try:
+            pw = tro.find('span', attrs={"style": "color:#ff0000"}).strong.next.next
+        except AttributeError:
+            pw = None
         if not pw or pw.strip() == "-":
             title = tmp_title
         else:
