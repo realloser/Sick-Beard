@@ -182,11 +182,30 @@
                                 </label>
                                 <label class="nocheck clearfix">
                                     <span class="component-title">&nbsp;</span>
-                                    <span class="component-desc">Hostname and portnumber of the NZBget RPC (not NZBgetweb!)</span>
+                                    <span class="component-desc">Hostname and portnumber of the NZBget RPC</span>
                                 </label>
                                 <label class="nocheck clearfix">
                                     <span class="component-title">&nbsp;</span>
-                                    <span class="component-desc">(eg. localhost:6789)</span>
+                                    <span class="component-desc">(not NZBgetweb!) (eg. localhost:6789)</span>
+                                </label>
+                            </div>
+
+                            <div class="field-pair">
+                                    <input type="checkbox" name="nzbget_https" class="enabler" id="nzbget_https" #if $sickbeard.NZBGET_HTTPS == True then "checked=\"checked\"" else ""# />
+                                    <label class="nocheck clearfix" for="nzbget_https">
+                                        <span class="component-title">Enable HTTPS</span>
+                                        <span class="component-desc">Should SickBeard use HTTPS for connection to NZBget?</span>
+                                    </label>
+                            </div>
+
+                            <div class="field-pair">
+                                <label class="nocheck clearfix">
+                                    <span class="component-title">NZBget Username</span>
+                                    <input type="text" name="nzbget_username" value="$sickbeard.NZBGET_USERNAME" size="20" />
+                                </label>
+                                <label class="nocheck clearfix">
+                                    <span class="component-title">&nbsp;</span>
+                                    <span class="component-desc">Username of your NZBget server (by default nzbget)</span>
                                 </label>
                             </div>
                             
