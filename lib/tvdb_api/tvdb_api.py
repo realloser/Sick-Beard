@@ -1,4 +1,7 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+#!/usr/bin/env python
 #encoding:utf-8
 #author:dbr/Ben
 #project:tvdb_api
@@ -74,7 +77,7 @@ class ShowContainer(dict):
 
             _lastgc = time.time()
             del tbd
-                    
+
         super(ShowContainer, self).__setitem__(key, value)
 
 
@@ -130,9 +133,9 @@ class Show(dict):
         Search terms are converted to lower case (unicode) strings.
 
         # Examples
-        
+
         These examples assume t is an instance of Tvdb():
-        
+
         >>> t = Tvdb()
         >>>
 
@@ -238,7 +241,7 @@ class Episode(dict):
         """Search episode data for term, if it matches, return the Episode (self).
         The key parameter can be used to limit the search to a specific element,
         for example, episodename.
-        
+
         This primarily for use use by Show.search and Season.search. See
         Show.search for further information on search
 
@@ -308,7 +311,8 @@ class Tvdb:
                 search_all_languages = False,
                 apikey = None,
                 forceConnect=False,
-                useZip=False):
+                useZip=False,
+                base_url = "http://thetvdb.com"):
 
         """interactive (True/False):
             When True, uses built-in console UI is used to select the correct show.
@@ -362,7 +366,7 @@ class Tvdb:
             By default, Tvdb will only search in the language specified using
             the language option. When this is True, it will search for the
             show in and language
-        
+
         apikey (str/unicode):
             Override the default thetvdb.com API key. By default it will use
             tvdb_api's own key (fine for small scripts), but you can use your
@@ -381,13 +385,13 @@ class Tvdb:
             This is only used when all episodes are pulled.
             And only the main language xml is used, the actor and banner xml are lost.
         """
-        
+
         global lastTimeout
-        
+
         # if we're given a lastTimeout that is less than 1 min just give up
         if not forceConnect and lastTimeout != None and datetime.datetime.now() - lastTimeout < datetime.timedelta(minutes=1):
             raise tvdb_error("We recently timed out, so giving up early this time")
-        
+
         self.shows = ShowContainer() # Holds all Show classes
         self.corrections = {} # Holds show-name to show_id mapping
 
@@ -477,7 +481,7 @@ class Tvdb:
 
         # The following url_ configs are based of the
         # http://thetvdb.com/wiki/index.php/Programmers_API
-        self.config['base_url'] = "http://thetvdb.com"
+        self.config['base_url'] = base_url
 
         if self.config['search_all_languages']:
             self.config['url_getSeries'] = u"%(base_url)s/api/GetSeries.php?seriesname=%%s&language=all" % self.config
@@ -528,7 +532,7 @@ class Tvdb:
                 lastTimeout = datetime.datetime.now()
             raise tvdb_error("Could not connect to server: %s" % (errormsg))
         #end try
-        
+
         # handle gzipped content,
         # http://dbr.lighthouseapp.com/projects/13342/tickets/72-gzipped-data-patch
         if 'gzip' in resp.headers.get("Content-Encoding", ''):
@@ -857,7 +861,7 @@ class Tvdb:
             if key not in self.shows:
                 self._getShowData(key, self.config['language'])
             return self.shows[key]
-        
+
         key = key.lower() # make key lower case
         sid = self._nameToSid(key)
         log().debug('Got series id %s' % (sid))
