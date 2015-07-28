@@ -2,7 +2,7 @@
 ######################
 cache/*
 cache.db*
-conf}g.ini*
+config.ini*
 Logs/*
 sickbeard.db*
 autoProcessTV/autoProcessTV.cfg
@@ -30,6 +30,8 @@ tests/cache.db
 *.tmproj
 *.tmproject
 *.sw?
+*.iml
+.idea
 
 # OS generated files #
 ######################
