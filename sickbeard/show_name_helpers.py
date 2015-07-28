@@ -38,8 +38,10 @@ resultFilters = ["sub(pack|s|bed|\.|fix)?", "nlsub(bed|s)?", "swesub(bed)?",
 mandatory = []
 
 langCodes = {
-    'de': 'german OR Videomann',
+    'de': 'german|videomann|euhd',
     'fr': 'french',
+    'da': 'danish',
+    'it': 'ita|italian',
     'es': 'spanish'
 }
 
@@ -62,7 +64,7 @@ def filterBadReleases(name, show):
 
     #if language not english, search for mandatory
     if show.lang != "en":
-        mandatory = langCodes[show.lang].split(" OR ")
+        mandatory = langCodes[show.lang].split("|")
         if langCodes[show.lang] in resultFilters:
             resultFilters.remove(langCodes[show.lang])
         logger.log(u"Language for \""+show.name+"\" is "+show.lang+" so im looking for \""+langCodes[show.lang]+"\" in release names", logger.DEBUG)
@@ -189,7 +191,7 @@ def makeSceneSeasonSearchString (show, segment, extraSearchType=None):
                     if show.lang == "en":
                         toReturn.append(curShow + "." + cur_season)
                     else:
-                        for x in langCodes[show.lang].split(" OR "):
+                        for x in langCodes[show.lang].split("|"):
                             toReturn.append(curShow + "." + cur_season + " " + x)
                     # toReturn.append(curShow + "." + cur_season)
 
@@ -244,7 +246,7 @@ def makeSceneSearchString (episode):
             if episode.show.lang == "en":
                 toReturn.append(curShow + "." + curEpString)
             else:
-                for x in langCodes[episode.show.lang].split(" OR "):
+                for x in langCodes[episode.show.lang].split("|"):
                     toReturn.append(curShow + "." + curEpString + " " + x)
     return toReturn
 
@@ -255,8 +257,8 @@ def trimRelease(name):
     #releasetrim = ['^<?.* \d{9,} ?-? ', '^\.zZz\. "?', '^(.*) >', '^\[\d{5,}.*\[ ', '^\.: ', '^\s?-?\s?\[.+ presents\s?', '^\s+?\[\d{2}\/\d{2}]\s?-?\s?"?', '^>.*<<\s', '^\[.*\[\d{2}/\d{2}\]\s?-\s?"']
     releasetrim = ['^sof-', '^euhd-', '^amb-', '^itg-', '^idtv-', '^zzgtv-', '^itn-', '^tcpa-', '^tvp-',
                       '^<?.* \d{9,} ?-? ', '^\.?zZz\.? ("|\')?', '^(.*) >', '^\[\d{5,}.*\[ ', '^\.: ', '^\s?-?\s?\[.+ presents\s?',
-                      '^\s+?\[\d{2}\/\d{2}]\s?-?\s?("|\')?', '^>.*<<\s', '^\[.*\[\d{2}/\d{2}\]\s?-\s?("|\')','^<?.+?\[.*\d{2}] - ("|\')','\[.?TOWN.*\] ?- ?(\[.TV.\].")?',
-                      '\[\d{2}\/\d{2}\]\s?-\s?"', '\/.*presents\.', '^(-\.")', '\.-\.TV\.-\.\d*\.-\.'  ]
+                      '^\s+?\[\d{2}\/\d{2}]\s?-?\s?("|\')?', '^>.*<<\s', '^\[.*\[\d{2}/\d{2}\]\s?-\s?("|\')','^<?.+?\[.*\d{2}] - ("|\')','\[.?TOWN.*\] ?- ?(\[.TV.\]."|\[.partner.*\]\.)?',
+                      '\[\d{2}\/\d{2}\](\s|\.)?-(\s|\.)?"', '\/.*presents\.', '^(-\.")', '\.-\.TV\.-\.\d*\.-\.']
     realname = name
     for regex in releasetrim:
         name = re.sub(regex, "", name)

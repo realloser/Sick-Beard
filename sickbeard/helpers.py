@@ -162,7 +162,7 @@ def getURL(url, headers=[]):
                 try:
                     data = StringIO.StringIO(zlib.decompress(content))
                 except zlib.error:
-                    data = StringIO.StringIO(zlib.decompress(content, -zlib.MAX_WBITS))
+                    data = StringIO.StringIO(zlib.decompressobj(-zlib.MAX_WBITS).decompress(content))
             else:
                 data = gzip.GzipFile('', 'rb', 9, StringIO.StringIO(content))
             result = data.read()

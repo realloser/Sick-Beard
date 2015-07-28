@@ -49,7 +49,6 @@ class NZBto(generic.NZBProvider):
         self.searchString = ''
 
         self.session = requests.Session()
-        self.session.get("http://nzb.to")
         self.session.headers["Referer"] = "http://nzb.to/login"
         self.session.headers["User-Agent"] = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.7; rv:20.0) Gecko/20100101 Firefox/20.0"
 
@@ -76,9 +75,22 @@ class NZBto(generic.NZBProvider):
         dl = item.find("a", attrs={"title": "NZB erstellen"})
         dl = cur_el
         tmp_url = "http://nzb.to/inc/ajax/popupdetails.php?n=" + cur_el["href"].split("nid=")[1]
-        x = self.session.get(tmp_url)
+
+        while True:
+            x = self.session.get(tmp_url)
+
+            if not x.status_code == 200:
+                logger.log('to much hits on nzb.to trying again in 5 seconds', logger.DEBUG)
+                time.sleep(5)
+
+            if x.status_code == 200:
+                break
+
         tro = BeautifulSoup(x.text)
-        pw = tro.find('span', attrs={"style": "color:#ff0000"}).strong.next.next
+        pw = tro.find('span', attrs={"style": "color:#ff0000"})
+        if pw:
+            pw = pw.strong.next.next
+
         if not pw or pw.strip() == "-":
             title = tmp_title
         else:
@@ -93,7 +105,7 @@ class NZBto(generic.NZBProvider):
         return (title, url)
 
     def _doSearch(self, curString, quotes=False, show=None):
-        self.session.post("http://nzb.to/login.php", data={"action": "login", "username": sickbeard.NZBTO_USER, "password": sickbeard.NZBTO_PASS, "bind_ip": "on", "Submit": ".%3AEinloggen%3A.", "ret_url": ""})
+        self.session.post("http://nzb.to/login.php", data={"action": "login", "username": sickbeard.NZBTO_USER, "password": sickbeard.NZBTO_PASS, "bind_ip": "off", "Submit": ".%3AEinloggen%3A.", "ret_url": ""})
         logger.log( 'sending login to nzb.to returned Cookie: {0}'.format(self.session.cookies.get_dict()), logger.DEBUG)
 
         term =  re.sub('[\.\-\:]', ' ', curString).encode('utf-8')
@@ -105,7 +117,7 @@ class NZBto(generic.NZBProvider):
         params = {"q": term,
                   "sort": "post_date", #max 50
                   "order": "desc", #nospam
-                  "amount": 50, #min 100MB
+                  "amount": 25, #min 100MB
                   }
 
         searchURL = "http://nzb.to/?p=list&" + urllib.urlencode(params)
@@ -123,7 +135,7 @@ class NZBto(generic.NZBProvider):
 
         #searchResult = self.getURL(searchURL,[("User-Agent","Mozilla/5.0 (Macintosh; Intel Mac OS X 10.7; rv:5.0) Gecko/20100101 Firefox/5.0"),("Accept","text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"),("Accept-Language","de-de,de;q=0.8,en-us;q=0.5,en;q=0.3"),("Accept-Charset","ISO-8859-1,utf-8;q=0.7,*;q=0.7"),("Connection","keep-alive"),("Cache-Control","max-age=0")])
         if curString == "cache":
-            url = "http://nzb.to/?p=list&cat=13&sa_Video-Genre=3221225407&sort=post_date&order=desc&amount=100"
+            url = "http://nzb.to/?p=list&cat=13&sa_Video-Genre=3221225407&sort=post_date&order=desc&amount=50"
             logger.log(url)
             searchResult = self.session.get(url)
             #logger.log(u"{0}".format(searchResult))
@@ -194,7 +206,6 @@ class NNZBtoCache(tvcache.TVCache):
         self.minTime = 40
 
         self.session = requests.Session()
-        self.session.get("http://nzb.to")
         self.session.headers["Referer"] = "http://nzb.to/login"
         self.session.headers["User-Agent"] = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.7; rv:20.0) Gecko/20100101 Firefox/20.0"
 
@@ -214,9 +225,9 @@ class NNZBtoCache(tvcache.TVCache):
         else:
             #if user and pass are ok, log us in
             self.provider.proxy = sickbeard.NZBTO_PROXY
-            self.provider.session.post("http://nzb.to/login.php", data={"action": "login", "username": sickbeard.NZBTO_USER, "password": sickbeard.NZBTO_PASS, "bind_ip": "on", "Submit": ".%3AEinloggen%3A.", "ret_url": ""})
+            self.provider.session.post("http://nzb.to/login.php", data={"action": "login", "username": sickbeard.NZBTO_USER, "password": sickbeard.NZBTO_PASS, "bind_ip": "off", "Submit": ".%3AEinloggen%3A.", "ret_url": ""})
 
-        url = "http://nzb.to/?p=list&cat=13&sa_Video-Genre=3221225407&sort=post_date&order=desc&amount=100"
+        url = "http://nzb.to/?p=list&cat=13&sa_Video-Genre=3221225407&sort=post_date&order=desc&amount=50"
 
         urlArgs = {'q': '',
                    "rpp": 50, #max 50
