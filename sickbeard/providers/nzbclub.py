@@ -25,6 +25,8 @@ import urllib
 import datetime
 import traceback
 
+NZBCLUB_RSS_URL = "http://www.nzbclub.com/nzbrss.aspx"
+
 try:
     import xml.etree.cElementTree as etree
 except ImportError:
@@ -100,7 +102,7 @@ class NZBClubProvider(generic.NZBProvider):
                   "sp":1 #nopass
                   }
 
-        searchURL = "http://nzbclub.com/nzbfeeds.aspx?" + urllib.urlencode(params)
+        searchURL = NZBCLUB_RSS_URL + "?" + urllib.urlencode(params)
 
         logger.log(u"Search string: " + searchURL)
 
@@ -168,7 +170,7 @@ class NZBClubCache(tvcache.TVCache):
 
     def _getRSSData(self):
         # get all records since the last timestamp
-        url = "http://nzbclub.com/nzbfeeds.aspx?"
+        url = "%s?" % NZBCLUB_RSS_URL
 
         urlArgs = {'q': '',
                    "rpp": 50, #max 50
