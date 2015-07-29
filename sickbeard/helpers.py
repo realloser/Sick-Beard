@@ -150,6 +150,8 @@ def getURL(url, headers=[]):
         opener.addheaders.append(cur_header)
 
     try:
+        if " " in url:
+            url = url.replace(" ", "%20")
         usock = opener.open(url)
         url = usock.geturl()
         encoding = usock.info().get("Content-Encoding")
