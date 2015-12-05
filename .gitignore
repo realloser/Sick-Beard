@@ -32,6 +32,8 @@ tests/cache.db
 *.tmproj
 *.tmproject
 *.sw?
+*.iml
+.idea
 
 # OS generated files #
 ######################
